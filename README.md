@@ -1,3 +1,3 @@
 # Resume
 
-adrianakopf.github.io/index.html
+adrianakopf.github.io
