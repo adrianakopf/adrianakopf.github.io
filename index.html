@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obesity Data Visualization</title>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <style>
+        .chart-container {
+            display: flex;
+            flex-direction: column; /* Changed to stack vertically */
+            align-items: center; /* Center align charts horizontally */
+            width: 100%;
+            margin: 10px 0; /* Reduced margin */
+        }
+
+        .chart {
+            width: 80%; /* Adjusted width */
+            height: 500px; /* Adjusted height */
+            margin-bottom: 10px; /* Reduced margin between charts */
+        }
+
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* Legend styles */
+        .legend {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: px;
+        }
+
+        .legend-item div {
+            width: 10px;
+            height: 10px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h1 style="text-align: center;">Obesity Data Visualization</h1>
+
+<!-- Create a container for the charts -->
+<div class="chart-container">
+
+    <!-- Container for the pie chart -->
+    <div id="pie-chart" class="chart">
+        <h3>Does obesity run in their family?</h3>
+    </div>
+    <!-- Legend for Pie Chart -->
+    <div class="legend" id="legend-pie">
+    </div>
+
+    
+    <!-- Container for the bar chart (age distribution) -->
+    <div id="age-chart" class="chart">
+        <h3>What is the age distribution of the dataset?</h3>
+    </div>
+  
+
+   
+    <!-- Container for the bar chart (obesity level per gender) -->
+    <div id="gender-chart" class="chart">
+        <h3>What is the obesity level per gender?</h3>
+    </div>
+    <!-- Legend for Bar Chart -->
+    <div class="legend" id="legend-gender">
+    </div>
+
+
+</div>
+
+<div class="tooltip"></div>
+
+<script>
+    // Load data from CSV using callback
+    d3.csv("/data/obesity.csv", function(error, data) {
+        if (error) {
+            console.error("Error loading data:", error);
+            return;
+        }
+
+        // Nest data by family_history_with_overweight and count the occurrences of each category for the pie chart
+        const nestedDataPie = d3.nest()
+            .key(d => d.family_history_with_overweight)
+            .rollup(values => values.length)
+            .entries(data);
+
+        // Convert nested data to array of objects for the pie chart
+        const pieData = nestedDataPie.map(d => ({ category: d.key, value: d.value }));
+
+        // Set up dimensions for the pie chart
+        const widthPie = 400; // Adjusted width
+        const heightPie = 400; // Adjusted height
+        const radius = Math.min(widthPie, heightPie) / 2;
+
+
+        // Define colors for the pie chart
+        const color = d3.scaleOrdinal()
+            .domain(pieData.map(d => d.category))
+            .range(['steelblue', 'lightblue']);
+
+        // Create a new pie generator
+        const pie = d3.pie()
+            .value(d => d.value)
+            .sort(null);
+
+        // Define arc generator
+        const arc = d3.arc()
+            .innerRadius(0)
+            .outerRadius(radius);
+
+        // Create SVG element for the pie chart
+        const svgPie = d3.select("#pie-chart")
+            .append("svg")
+            .attr("width", widthPie)
+            .attr("height", heightPie)
+            .append("g")
+            .attr("transform", `translate(${widthPie / 2}, ${heightPie / 2})`);
+
+        // Generate pie chart arcs
+        const arcsPie = svgPie.selectAll("arc")
+            .data(pie(pieData))
+            .enter()
+            .append("g");
+
+        // Draw arcs for the pie chart
+        arcsPie.append("path")
+            .attr("d", arc)
+            .attr("fill", d => color(d.data.category))
+            .attr("stroke", "white")
+            .style("stroke-width", "2px")
+            .on("mouseover", function(d) {
+                d3.select(this).attr("fill", "blue");
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                tooltip.html("Count: " + d.data.value)
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mouseout", function(d) {
+                d3.select(this).attr("fill", color(d.data.category));
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+        // Create legend for Pie Chart
+        const legendPie = d3.select("#legend-pie");
+
+        // Add legend items
+        legendPie.selectAll(".legend-item")
+            .data(pieData)
+            .enter()
+            .append("div")
+            .attr("class", "legend-item")
+            .html(d => `<div style="background-color: ${color(d.category)};"></div><span>${d.category}</span>`);
+
+
+        // Calculate the average age
+        const totalAge = d3.sum(data, d => +d.Age); // Convert Age to number
+        const averageAge = totalAge / data.length;
+
+        // Set up dimensions for the bar chart (age distribution)
+        const widthBarAge = 600; // Adjusted width
+        const heightBarAge = 400; // Adjusted height
+        const marginAge = { top: 20, right: 20, bottom: 100, left: 80 }; // Adjusted margin
+        const innerWidthAge = widthBarAge - marginAge.left - marginAge.right;
+        const innerHeightAge = heightBarAge - marginAge.top - marginAge.bottom;
+
+        // Define age buckets
+        const ageBuckets = [
+            { label: '0-10', minAge: 0, maxAge: 10 },
+            { label: '11-20', minAge: 11, maxAge: 20 },
+            { label: '21-30', minAge: 21, maxAge: 30 },
+            { label: '31-40', minAge: 31, maxAge: 40 },
+            { label: '41-50', minAge: 41, maxAge: 50 },
+            { label: '51-60', minAge: 51, maxAge: 60 },
+            { label: '61-70', minAge: 61, maxAge: 70 },
+            { label: '71+', minAge: 71, maxAge: Infinity }
+        ];
+
+        // Group data into age buckets and count the occurrences for the bar chart (age distribution)
+        const ageCounts = ageBuckets.map(bucket => ({
+            label: bucket.label,
+            count: data.filter(d => d.Age >= bucket.minAge && d.Age <= bucket.maxAge).length
+        }));
+
+        // Create scales for the bar chart (age distribution)
+        const xScaleAge = d3.scaleBand()
+            .domain(ageCounts.map(d => d.label))
+            .range([0, innerWidthAge])
+            .padding(0.2);
+
+        const yScaleAge = d3.scaleLinear()
+            .domain([0, d3.max(ageCounts, d => d.count)])
+            .range([innerHeightAge, 0]);
+
+        // Create SVG element for the bar chart (age distribution)
+        const svgBarAge = d3.select("#age-chart")
+            .append("svg")
+            .attr("width", widthBarAge)
+            .attr("height", heightBarAge)
+            .append("g")
+            .attr("transform", `translate(${marginAge.left},${marginAge.top})`);
+
+        // Draw bars for the bar chart (age distribution)
+        svgBarAge.selectAll("rect")
+            .data(ageCounts)
+            .enter()
+            .append("rect")
+            .attr("x", d => xScaleAge(d.label))
+            .attr("y", d => yScaleAge(d.count))
+            .attr("width", xScaleAge.bandwidth())
+            .attr("height", d => innerHeightAge - yScaleAge(d.count))
+            .attr("fill", "steelblue")
+            .on("mouseover", function(d) {
+                d3.select(this).attr("fill", "blue");
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                tooltip.html("Count: " + d.count)
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mouseout", function(d) {
+                d3.select(this).attr("fill", "steelblue");
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+        // Add x-axis for the bar chart (age distribution)
+        svgBarAge.append("g")
+            .attr("transform", `translate(0,${innerHeightAge})`)
+            .call(d3.axisBottom(xScaleAge))
+            .selectAll("text")
+            .attr("transform", "rotate(-30)")
+            .attr("x", -10)
+            .attr("y", 0)
+            .style("text-anchor", "end");
+
+        // Add y-axis for the bar chart (age distribution)
+        svgBarAge.append("g")
+            .call(d3.axisLeft(yScaleAge));
+
+        // Add text label for x-axis for the bar chart (age distribution)
+        svgBarAge.append("text")
+            .attr("x", innerWidthAge / 2)
+            .attr("y", innerHeightAge + marginAge.bottom / 2 + 10) // Adjusted y position
+            .attr("text-anchor", "middle")
+            .text("Age Buckets");
+
+        // Add text label for y-axis for the bar chart (age distribution)
+        svgBarAge.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", 0 - innerHeightAge / 2)
+            .attr("y", 0 - marginAge.left)
+            .attr("dy", "1em")
+            .attr("text-anchor", "middle")
+            .text("Count");
+
+        // Create legend for Age Chart
+        const legendAge = d3.select("#legend-age");
+
+        // Add legend items
+        legendAge.selectAll(".legend-item")
+            .data(ageCounts)
+            .enter()
+            .append("div")
+            .attr("class", "legend-item")
+            .html(d => `<div style="background-color: steelblue;"></div><span>${d.label}</span>`);
+
+
+        // Nest data by NObeyesdad and Gender and count the occurrences of each category for the bar chart (obesity level per gender)
+        const nestedDataGender = d3.nest()
+            .key(d => d.NObeyesdad)
+            .key(d => d.Gender)
+            .rollup(values => values.length)
+            .entries(data);
+
+        // Convert nested data to array of objects for the bar chart (obesity level per gender)
+        const barDataGender = nestedDataGender.map(d => ({
+            category: d.key,
+            genders: d.values.map(g => ({ gender: g.key, count: g.value }))
+        }));
+
+        // Set up dimensions for the bar chart (obesity level per gender)
+        const widthBarGender = 600; // Adjusted width
+        const heightBarGender = 400; // Adjusted height
+        const marginGender = { top: 20, right: 20, bottom: 100, left: 80 }; // Adjusted margin
+        const innerWidthGender = widthBarGender - marginGender.left - marginGender.right;
+        const innerHeightGender = heightBarGender - marginGender.top - marginGender.bottom;
+
+        // Create scales for the bar chart (obesity level per gender)
+        const x0ScaleGender = d3.scaleBand()
+            .domain(barDataGender.map(d => d.category))
+            .rangeRound([0, innerWidthGender])
+            .paddingInner(0.2) // Adjusted padding
+            .paddingOuter(0.3); // Added outer padding
+
+        const x1ScaleGender = d3.scaleBand()
+            .domain(['Male', 'Female'])
+            .rangeRound([0, x0ScaleGender.bandwidth()])
+            .padding(0.05);
+
+        const yScaleGender = d3.scaleLinear()
+            .domain([0, d3.max(barDataGender, d => d3.max(d.genders, g => g.count))])
+            .nice()
+            .range([innerHeightGender, 0]);
+
+        // Create SVG element for the bar chart (obesity level per gender)
+        const svgBarGender = d3.select("#gender-chart")
+            .append("svg")
+            .attr("width", widthBarGender)
+            .attr("height", heightBarGender)
+            .append("g")
+            .attr("transform", `translate(${marginGender.left},${marginGender.top})`);
+
+        // Draw bars for the bar chart (obesity level per gender)
+        svgBarGender.append("g")
+            .selectAll("g")
+            .data(barDataGender)
+            .enter().append("g")
+            .attr("transform", d => `translate(${x0ScaleGender(d.category)},0)`)
+            .selectAll("rect")
+            .data(d => d.genders)
+            .enter().append("rect")
+            .attr("x", d => x1ScaleGender(d.gender))
+            .attr("y", d => yScaleGender(d.count))
+            .attr("width", x1ScaleGender.bandwidth())
+            .attr("height", d => innerHeightGender - yScaleGender(d.count))
+            .attr("fill", d => (d.gender === 'Male') ? 'lightblue' : 'pink')
+            .on("mouseover", function(d) {
+                d3.select(this).attr("fill", "blue");
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                tooltip.html("Count: " + d.count)
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mouseout", function(d) {
+                d3.select(this).attr("fill", (d.gender === 'Male') ? 'lightblue' : 'pink');
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+        // Add x-axis for the bar chart (obesity level per gender)
+        svgBarGender.append("g")
+            .attr("class", "x-axis")
+            .attr("transform", `translate(0,${innerHeightGender})`)
+            .call(d3.axisBottom(x0ScaleGender))
+            .selectAll("text")
+            .attr("transform", "rotate(-30)")
+            .attr("x", -10)
+            .attr("y", 0)
+            .style("text-anchor", "end");
+
+        // Add y-axis for the bar chart (obesity level per gender)
+        svgBarGender.append("g")
+            .call(d3.axisLeft(yScaleGender));
+
+        // Add text label for x-axis for the bar chart (obesity level per gender)
+        svgBarGender.append("text")
+            .attr("x", innerWidthGender / 2)
+            .attr("y", innerHeightGender + marginGender.bottom / 2 + 40) // Adjusted y position
+            .attr("text-anchor", "middle")
+            .text("Obesity Levels");
+
+        // Add text label for y-axis for the bar chart (obesity level per gender)
+        svgBarGender.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", 0 - innerHeightGender / 2)
+            .attr("y", 0 - marginGender.left)
+            .attr("dy", "1em")
+            .attr("text-anchor", "middle")
+            .text("Count");
+
+        // Create legend for Gender Chart
+        const legendGender = d3.select("#legend-gender");
+
+        // Add legend items
+        legendGender.selectAll(".legend-item")
+            .data(['Male', 'Female'])
+            .enter()
+            .append("div")
+            .attr("class", "legend-item")
+            .html(d => `<div style="background-color: ${d === 'Male' ? 'lightblue' : 'pink'};"></div><span>${d}</span>`);
+
+        // Add tooltip div
+        const tooltip = d3.select("body")
+            .append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+    });
+</script>
+
+</body>
+</html>
