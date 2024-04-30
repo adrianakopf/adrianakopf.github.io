@@ -5,6 +5,6 @@ https://adrianakopf.github.io/index.html
 
 # Deliverables
 
-1 page for the visualization itself
-1 documentation page 
+1 page for the visualization itself, 
+1 documentation page,  
 A 2-4 minutes YouTube video showing the use of your visualization with narration. This video should be embedded in your documentation page. 
