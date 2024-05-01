@@ -16,7 +16,7 @@
 
         .chart {
             width: 80%; /* Adjusted width */
-            height: 500px; /* Adjusted height */
+            height: 480px; /* Adjusted height */
             margin-bottom: 10px; /* Reduced margin between charts */
         }
 
@@ -89,7 +89,7 @@
 
 <script>
     // Load data from CSV using callback
-    d3.csv("/obesity.csv", function(error, data) {
+    d3.csv("/data/obesity.csv", function(error, data) {
         if (error) {
             console.error("Error loading data:", error);
             return;
@@ -413,6 +413,25 @@
 
     });
 </script>
+
+
+
+<h1 style="text-align: center;">Embedded Report</h1>
+
+<!-- Embed the document -->
+<div style="text-align: center;">
+    <iframe src="/research/obesity_report.pdf" width="80%" height="700px"></iframe>
+</div>
+
+
+<h1 style="text-align: center;">Embedded YouTube Video</h1>
+
+<!-- Embed the YouTube video Test -->
+<div style="text-align: center;">
+    <iframe width="600" height="400" src="https://www.youtube.com/embed/xkBheRZTkaw" frameborder="0" allowfullscreen></iframe>
+</div>
+
+
 
 </body>
 </html>
