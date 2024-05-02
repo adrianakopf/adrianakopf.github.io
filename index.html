@@ -49,6 +49,14 @@
             height: 10px;
             margin-right: 5px;
         }
+        .legend-item {
+        display: flex;
+        align-items: center;
+        margin-right: 10px; /* Changed from "px" to "10px" */
+    }
+
+
+
     </style>
 </head>
 <body>
@@ -80,6 +88,15 @@
     </div>
     <!-- Legend for Bar Chart -->
     <div class="legend" id="legend-gender">
+    </div>
+
+    
+
+    <!-- Create a container for the charts -->
+    <div class="chart-container">
+        <!-- Container for FAVC chart -->
+        <div id="favc-chart" class="chart">
+            <h3>Do you eat high caloric food frequently (FAVC)?</h3>
     </div>
 
 
@@ -405,26 +422,120 @@
             .attr("class", "legend-item")
             .html(d => `<div style="background-color: ${d === 'Male' ? 'lightblue' : 'pink'};"></div><span>${d}</span>`);
 
+           
+        // Count the occurrences of 'yes' and 'no' for FAVC
+        const totalFAVCYes = data.filter(d => d.FAVC === "yes").length;
+        const totalFAVCNo = data.filter(d => d.FAVC === "no").length;
+
+        // Data for the FAVC chart
+        const favcData = [
+            { category: "Yes", count: totalFAVCYes },
+            { category: "No", count: totalFAVCNo }
+        ];
+
+        // Set up dimensions for the FAVC chart
+        const widthFAVC = 600;
+        const heightFAVC = 400;
+        const marginFAVC = { top: 20, right: 20, bottom: 100, left: 80 };
+        const innerWidthFAVC = widthFAVC - marginFAVC.left - marginFAVC.right;
+        const innerHeightFAVC = heightFAVC - marginFAVC.top - marginFAVC.bottom;
+
+        // Create scales for the FAVC chart
+        const xScaleFAVC = d3.scaleBand()
+            .domain(favcData.map(d => d.category))
+            .range([0, innerWidthFAVC])
+            .padding(0.2);
+
+        const yScaleFAVC = d3.scaleLinear()
+            .domain([0, d3.max(favcData, d => d.count)])
+            .range([innerHeightFAVC, 0]);
+
+        // Create SVG element for the FAVC chart
+        const svgFAVC = d3.select("#favc-chart")
+            .append("svg")
+            .attr("width", widthFAVC)
+            .attr("height", heightFAVC)
+            .append("g")
+            .attr("transform", `translate(${marginFAVC.left},${marginFAVC.top})`);
+
+        // Draw bars for the FAVC chart
+        svgFAVC.selectAll("rect")
+            .data(favcData)
+            .enter()
+            .append("rect")
+            .attr("x", d => xScaleFAVC(d.category))
+            .attr("y", d => yScaleFAVC(d.count))
+            .attr("width", xScaleFAVC.bandwidth())
+            .attr("height", d => innerHeightFAVC - yScaleFAVC(d.count))
+            .attr("fill", d => (d.category === 'Yes') ? 'steelblue' : 'lightblue')
+            .on("mouseover", function(d) {
+                d3.select(this).attr("fill", "blue");
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                tooltip.html("Count: " + d.count)
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mouseout", function(d) {
+                d3.select(this).attr("fill", d => (d.category === 'Yes') ? 'steelblue' : 'lightblue');
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+        // Add x-axis for the FAVC chart
+        svgFAVC.append("g")
+            .attr("transform", `translate(0,${innerHeightFAVC})`)
+            .call(d3.axisBottom(xScaleFAVC))
+            .selectAll("text")
+            .attr("transform", "rotate(-45)")
+            .style("text-anchor", "end");
+
+        // Add y-axis for the FAVC chart
+        svgFAVC.append("g")
+            .call(d3.axisLeft(yScaleFAVC));
+
+        // Add text label for x-axis for the FAVC chart
+        svgFAVC.append("text")
+            .attr("x", innerWidthFAVC / 2)
+            .attr("y", innerHeightFAVC + marginFAVC.bottom / 2 + 10)
+            .attr("text-anchor", "middle")
+            .text("FAVC");
+
+        // Add text label for y-axis for the FAVC chart
+        svgFAVC.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", 0 - innerHeightFAVC / 2)
+            .attr("y", 0 - marginFAVC.left)
+            .attr("dy", "1em")
+            .attr("text-anchor", "middle")
+            .text("Count");
+
         // Add tooltip div
         const tooltip = d3.select("body")
             .append("div")
             .attr("class", "tooltip")
             .style("opacity", 0);
 
+
+
+
+
     });
 </script>
 
 
 
-<h1 style="text-align: center;">Embedded Report</h1>
+<h1 style="text-align: center;">Report</h1>
 
 <!-- Embed the document -->
 <div style="text-align: center;">
-    <iframe src="/obesity_report.pdf" width="80%" height="700px"></iframe>
+    <iframe src="/obesity_report.pdf" width="800px" height="500px" ></iframe>
 </div>
 
 
-<h1 style="text-align: center;">Embedded YouTube Video</h1>
+<h1 style="text-align: center;">YouTube Video</h1>
 
 <!-- Embed the YouTube video Test -->
 <div style="text-align: center;">
