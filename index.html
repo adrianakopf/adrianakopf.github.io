@@ -5,44 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Obesity Data Visualization</title>
     <script src="https://d3js.org/d3.v4.min.js"></script>
-    <style>
-        .chart-container {
-            display: flex;
-            flex-direction: column; /* Changed to stack vertically */
-            align-items: center; /* Center align charts horizontally */
-            width: 100%;
-            margin: 10px 0; /* Reduced margin */
-        }
+   
+   
+   <style>
+        
 
-        .chart {
-            width: 80%; /* Adjusted width */
-            height: 480px; /* Adjusted height */
-            margin-bottom: 10px; /* Reduced margin between charts */
-        }
-
-        .tooltip {
-            position: absolute;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 5px;
-            border-radius: 5px;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        /* Legend styles */
+                /* Position the legend at the bottom right of each graph */
         .legend {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 10px;
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
         }
 
-        .legend-item {
+        /* Adjusted margin between chart containers */
+        .chart-row {
             display: flex;
-            align-items: center;
-            margin-right: px;
+            justify-content: space-between;
+            margin-bottom: 20px;
         }
+
+        /* Adjusted width to fit two charts per line */
+        .chart-container {
+            width: 48%;
+            position: relative; /* Add this to position the legend */
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+
 
         .legend-item div {
             width: 10px;
@@ -57,49 +50,88 @@
 
 
 
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+      
+
+
     </style>
 </head>
 <body>
 
 <h1 style="text-align: center;">Obesity Data Visualization</h1>
+<p style="text-align: center;">Obesity analysis among individuals in Mexico, Peru, and Colombia.</p>
 
-<!-- Create a container for the charts -->
-<div class="chart-container">
+
+<!-- Container for the pie chart and age distribution -->
+<div class="chart-row">
 
     <!-- Container for the pie chart -->
-    <div id="pie-chart" class="chart">
-        <h3>Does obesity run in their family?</h3>
-    </div>
-    <!-- Legend for Pie Chart -->
-    <div class="legend" id="legend-pie">
+    <div class="chart-container">
+        <div id="pie-chart" class="chart">
+            <div class="chart-title" style="background-color: rgb(248, 247, 247);">
+            <h3>Does obesity run in their family?</h3>
+        </div>
     </div>
 
+
+    <!-- Legend for Pie Chart -->
+    <div class="legend legend-pie" id="legend-pie">
+        <!-- Legend items will be dynamically added here -->
+    </div>
+        
+    </div>
     
     <!-- Container for the bar chart (age distribution) -->
-    <div id="age-chart" class="chart">
-        <h3>What is the age distribution of the dataset?</h3>
-    </div>
-  
-
-   
-    <!-- Container for the bar chart (obesity level per gender) -->
-    <div id="gender-chart" class="chart">
-        <h3>What is the obesity level per gender?</h3>
-    </div>
-    <!-- Legend for Bar Chart -->
-    <div class="legend" id="legend-gender">
-    </div>
-
-    
-
-    <!-- Create a container for the charts -->
     <div class="chart-container">
-        <!-- Container for FAVC chart -->
-        <div id="favc-chart" class="chart">
-            <h3>Do you eat high caloric food frequently (FAVC)?</h3>
+        <div id="age-chart" class="chart">
+            <div class="chart-title" style="background-color:  rgb(248, 247, 247);">
+            <h3>What is the age distribution of the dataset?</h3>
+        </div>
+    </div>
+        
+    </div>
+</div>
+
+<!-- Container for the bar chart (obesity level per gender) and FAVC chart -->
+<div class="chart-row">
+    <!-- Container for the bar chart (obesity level per gender) -->
+    <div class="chart-container">
+        <div id="gender-chart" class="chart">
+            <div class="chart-title" style="background-color:  rgb(248, 247, 247);">       
+            <h3>What is the obesity level per gender?</h3>
+        </div>
     </div>
 
+   <!-- Legend for Gender Chart -->
+   <div class="legend legend-gender" id="legend-gender">
+    <!-- Legend items will be dynamically added here -->
+</div>
+        
 
+
+    </div>
+
+    <!-- Container for FAVC chart -->
+    <div class="chart-container">
+        <div id="favc-chart" class="chart">
+            <div class="chart-title" style="background-color: #fcf9f9;">
+            <h3>Do you eat high caloric food frequently (FAVC)?</h3>
+        </div>
+    </div>
+
+        <!-- Legend for FAVC Chart -->
+        <div class="legend legend-favc">
+        </div>
+    </div>
 </div>
 
 <div class="tooltip"></div>
@@ -122,8 +154,8 @@
         const pieData = nestedDataPie.map(d => ({ category: d.key, value: d.value }));
 
         // Set up dimensions for the pie chart
-        const widthPie = 400; // Adjusted width
-        const heightPie = 400; // Adjusted height
+        const widthPie = 300; // Adjusted width
+        const heightPie = 300; // Adjusted height
         const radius = Math.min(widthPie, heightPie) / 2;
 
 
@@ -195,7 +227,7 @@
         const averageAge = totalAge / data.length;
 
         // Set up dimensions for the bar chart (age distribution)
-        const widthBarAge = 600; // Adjusted width
+        const widthBarAge = 400; // Adjusted width
         const heightBarAge = 400; // Adjusted height
         const marginAge = { top: 20, right: 20, bottom: 100, left: 80 }; // Adjusted margin
         const innerWidthAge = widthBarAge - marginAge.left - marginAge.right;
@@ -319,7 +351,7 @@
         }));
 
         // Set up dimensions for the bar chart (obesity level per gender)
-        const widthBarGender = 600; // Adjusted width
+        const widthBarGender = 400; // Adjusted width
         const heightBarGender = 400; // Adjusted height
         const marginGender = { top: 20, right: 20, bottom: 100, left: 80 }; // Adjusted margin
         const innerWidthGender = widthBarGender - marginGender.left - marginGender.right;
@@ -434,7 +466,7 @@
         ];
 
         // Set up dimensions for the FAVC chart
-        const widthFAVC = 600;
+        const widthFAVC = 400;
         const heightFAVC = 400;
         const marginFAVC = { top: 20, right: 20, bottom: 100, left: 80 };
         const innerWidthFAVC = widthFAVC - marginFAVC.left - marginFAVC.right;
@@ -527,21 +559,26 @@
 
 
 
-<h1 style="text-align: center;">Report</h1>
+<!-- Container for the title "Report" with background color -->
+<div style="background-color: rgb(248, 247, 247); text-align: center;">
+    <h1>Report</h1>
+</div>
 
 <!-- Embed the document -->
 <div style="text-align: center;">
     <iframe src="/obesity_report.pdf" width="800px" height="500px" ></iframe>
 </div>
 
+<!-- Container for the title "Report" with background color -->
+<div style="background-color: rgb(248, 247, 247); text-align: center;">
+    <h1>Youtube Video</h1>
+</div>
 
-<h1 style="text-align: center;">YouTube Video</h1>
 
 <!-- Embed the YouTube video Test -->
 <div style="text-align: center;">
     <iframe width="600" height="400" src="https://www.youtube.com/embed/xkBheRZTkaw" frameborder="0" allowfullscreen></iframe>
 </div>
-
 
 
 </body>
